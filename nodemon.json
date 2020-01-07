@@ -1,0 +1,10 @@
+{
+    "exec": "npm run dev",
+    "watch": [
+        "src/*"
+    ],
+    "ignore": [
+        "src/stylesheets/*"
+    ],
+    "ext": "js, html, css, json, scss, hbs"
+}
