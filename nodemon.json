@@ -1,7 +1,8 @@
 {
     "exec": "npm run dev",
     "watch": [
-        "src/*"
+        "src/*",
+        ".env"
     ],
     "ignore": [
         "src/stylesheets/*"

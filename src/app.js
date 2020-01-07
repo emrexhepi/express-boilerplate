@@ -1,25 +1,47 @@
 /**
  * Module imports
  */
-import createError from 'http-errors';
 import express from 'express';
 import path from 'path';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import sassMiddleware from 'node-sass-middleware';
+import dotenv from 'dotenv';
+import hbs from 'hbs';
 
 /**
  * Router improts
  */
-import indexRouter from './routes/index';
+import indexRouter from 'routes/index';
 
+/**
+ * Dotenv config
+ */
+dotenv.config();
+
+/**
+ * Constants
+ */
+const env = process.env.NODE_ENV;
 const app = express();
 
-// view engine setup
+/**
+ * View engine setup
+ */
 app.set('views', path.join(__dirname, 'views'));
+app.set('partials', path.join(__dirname, 'views/partials'));
 app.set('view engine', 'hbs');
-app.set('view options', { layout: 'layouts/main.hbs' });
+hbs.registerPartials(path.join(__dirname, 'views/partials'));
+app.set('view options',
+    {
+        layout: 'layouts/main.hbs',
+    }
+);
 
+
+/**
+ * Middleware setip
+ */
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -28,30 +50,47 @@ app.use(sassMiddleware({
     /* Options */
     src: path.join(__dirname, './'),
     dest: path.join(__dirname, '../public/'),
-    debug: true,
-    outputStyle: 'compressed',
+    debug: false,
+    outputStyle: env === 'development' ? '' : 'compressed',
 }));
 app.use(express.static(path.join(__dirname, '../public')));
 
 /**
- * Routers use
+ * Routers middlewares
  */
 app.use('/', indexRouter);
 
-// catch 404 and forward to error handler
-app.use((req, res, next) => {
-    next(createError(404));
-});
+/**
+ * General Errors middleware
+ */
+// eslint-disable-next-line no-unused-vars
+app.use((error, req, res, next) => {
+    const status = error.status || 500;
 
-// error handler
-app.use((err, req, res) => {
-    // set locals, only providing error in development
-    res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {};
+    // error 404
+    if (status === 404) {
+        res.locals.error = {
+            status: 404
+        };
+        res.status(404).render('pages/error_page.hbs', {
+            title: 'Page not found!',
+            message: 'Sorry this page is not available!',
+            status: 404
+        });
+        return;
+    }
+
+    // all other errors
+    res.locals = {};
+    res.locals.title = 'Internal Server Error!';
+    res.locals.message = env === 'development' ? error.message : '';
+    res.locals.error = env === 'development' ? error : {
+        status
+    };
 
     // render the error page
-    res.status(err.status || 500);
-    res.render('error');
+    res.status(status).render('pages/error_page');
 });
+
 
 export default app;
